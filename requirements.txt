@@ -1,0 +1,36 @@
+# Audio / YouTube ingestion
+yt-dlp
+ffmpeg-python
+
+# Audio processing
+openai-whisper
+sarvamai==0.1.31
+torch
+torchaudio
+pydub
+
+# Translation / language processing
+deep-translator
+
+# LangChain + Mistral
+langchain
+langchain-core
+langchain-mistralai
+
+# RAG / Vector database
+chromadb
+langchain-chroma
+sentence-transformers
+langchain-huggingface
+
+# Streamlit UI
+streamlit
+
+# PDF / text export
+reportlab
+
+# Environment variables
+python-dotenv
+
+# Common utilities
+requests
