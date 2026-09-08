@@ -1,4 +1,7 @@
 # Web server
+fastapi
+uvicorn
+gunicorn
 Flask
 gunicorn
 
