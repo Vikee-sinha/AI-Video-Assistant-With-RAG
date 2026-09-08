@@ -1,60 +1,151 @@
-from langchain_mistralai import ChatMistralAI
+import os
+import time
+
+import httpx
+# from langchain_mistralai import ChatMistralAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_core.runnables import RunnablePassthrough, RunnableLambda
+from langchain_google_genai import ChatGoogleGenerativeAI
+from dotenv import load_dotenv
 
-import os
+
+# Load environment variables
+load_dotenv()
+
+
+# The free ("Experiment") tier is capped at roughly 1 request/second per
+# model, plus a tokens/minute and tokens/month cap. mistral-small-latest
+# fits comfortably in the free tier; mistral-medium/large will 429 much
+# faster under the same limits.
+
+
+
 def get_llm():
-    return ChatMistralAI(model = "mistal-small-latest" ,mistral_api_key = os.getenv("MISTRAL_API_KEY"))
+    api_key = os.getenv("GEMINI_API_KEY")
 
-def split_transcribe(transcript: str)->list:
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size = 3000,
-        chunk_overlap = 200
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY is not set.")
+
+    return ChatGoogleGenerativeAI(
+        model="gemini-3.6-flash",
+        google_api_key=api_key,
     )
-    return splitter.split_text(transcript)
 
-def summerizer(transcript:str)->str:
+
+def invoke_with_backoff(chain, payload, max_attempts: int = 6, base_delay: float = 2.0):
+    """
+    Call chain.invoke(payload), retrying on HTTP 429 with exponential
+    backoff. Needed because the free Mistral tier allows ~1 req/sec and
+    will reject bursts outright rather than queueing them.
+    """
+
+    for attempt in range(1, max_attempts + 1):
+        try:
+            return chain.invoke(payload)
+
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 429 and attempt < max_attempts:
+                delay = base_delay * (2 ** (attempt - 1))
+                print(
+                    f"Rate limited (429). Retrying in {delay:.0f}s "
+                    f"(attempt {attempt}/{max_attempts})..."
+                )
+                time.sleep(delay)
+                continue
+            raise
+
+
+def build_analysis_chain():
+
     llm = get_llm()
 
-    map_prompt = ChatPromptTemplate.from_messages([
-        ("system","summerize the portion of the meeting text conciesly."),
-        ("human","{text}"),
+    prompt = ChatPromptTemplate.from_messages([
+        (
+            "system",
+            """You are an expert meeting analyst.
+
+Analyze the complete meeting transcript.
+
+Return EXACTLY these five sections:
+
+TITLE:
+A short professional meeting title. Maximum 8 words.
+
+SUMMARY:
+A concise professional summary in bullet points.
+
+ACTION ITEMS:
+List every action item.
+For each action item provide:
+- Task
+- Owner
+- Deadline
+
+KEY DECISIONS:
+List all important decisions made during the meeting.
+
+OPEN QUESTIONS:
+List all unresolved questions or topics requiring follow-up.
+
+Rules:
+- Use ONLY information explicitly present in the transcript.
+- Do not invent names, deadlines, decisions, or facts.
+- If an owner is not mentioned, write "Not specified".
+- If a deadline is not mentioned, write "Not specified".
+- If no information exists for a section, write "None found".
+- Keep the response concise.
+"""
+        ),
+        (
+            "human",
+            "{transcript}"
+        )
     ])
-    map_chain = map_prompt | llm | StrOutputParser
 
-    chunks = split_transcribe(transcript)
+    return prompt | llm | StrOutputParser()
 
-    chunk_summerizer = (map_chain.invoke({"text":chunk}) for chunk in chunks )
 
-    combined = "\n\n".join(chunk_summerizer)
+def analyze_meeting(transcript: str) -> str:
 
-    combined_prompt = ChatPromptTemplate.from_messages([
-        ("system",
-         "You are an expert meeting summerizer. combine these parcial summerizer"
-         "into the final professional meeting summery in bullet points "
-         ),
-        ("human","{text}"),
-    ])
+    chain = build_analysis_chain()
 
-    combined_chain=(
-        RunnablePassthrough |RunnableLambda(lambda x:{"text":x}) | combined_prompt | llm |StrOutputParser
-    )
-    return combined_chain.invoke(combined)
+    print("\nAnalyzing meeting with Mistral...")
 
-def title_generate(transcript: str)->str:
-    llm = get_llm()
+    return invoke_with_backoff(chain, {"transcript": transcript})
 
-    title_chain=(
-        RunnablePassthrough |RunnableLambda(lambda x:{"text":x}) | 
-        ChatPromptTemplate.from_messages([
-            ("system","based on the meeting transcript , generate a short profesional meeting title"
-             "(max world length 8)only return the title nothing else "),
-            ("human","{text}"),
-        ])
-        | llm
-        | StrOutputParser
-    )
-    return title_chain.invoke(transcript[:2000])
 
+def parse_analysis(result: str) -> dict:
+
+    sections = {
+        "title": "",
+        "summary": "",
+        "action_items": "",
+        "key_decisions": "",
+        "questions": ""
+    }
+
+    section_map = {
+        "TITLE:": "title",
+        "SUMMARY:": "summary",
+        "ACTION ITEMS:": "action_items",
+        "KEY DECISIONS:": "key_decisions",
+        "OPEN QUESTIONS:": "questions"
+    }
+
+    current_section = None
+
+    for line in result.splitlines():
+
+        line = line.strip()
+
+        if line in section_map:
+            current_section = section_map[line]
+            continue
+
+        if current_section:
+            sections[current_section] += line + "\n"
+
+    for key in sections:
+        sections[key] = sections[key].strip()
+
+    return sections

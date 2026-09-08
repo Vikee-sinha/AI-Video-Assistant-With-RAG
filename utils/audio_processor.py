@@ -82,10 +82,10 @@ def convert_to_wav(input_path: str) -> str:
 
 def chunk_audio(
     wav_path: str,
-    chunk_seconds: int = 30
+    chunk_seconds: int = 120
 ) -> list[str]:
     """
-    Split WAV audio into 30-second chunks.
+    Split WAV audio into 120-second chunks.
 
     Sarvam's synchronous STT endpoint
     works with short audio chunks.
@@ -133,7 +133,7 @@ def process_input(url: str) -> list[str]:
         ↓
     Convert to 16kHz mono WAV
         ↓
-    Split into 30-second chunks
+    Split into 120-second chunks
     """
 
     print("\nDownloading audio...")
@@ -160,7 +160,7 @@ def process_input(url: str) -> list[str]:
 
     chunks = chunk_audio(
         converted_file,
-        chunk_seconds=30
+        chunk_seconds=120
     )
 
     print(

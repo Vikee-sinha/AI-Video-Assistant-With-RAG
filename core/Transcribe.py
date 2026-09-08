@@ -61,7 +61,7 @@ def transcribe_chunk_whisper(
     chunk_path: str
 ) -> str:
     """Transcribe English audio using local Whisper."""
-
+    # https://www.youtube.com/watch?v=7IgVGSaQPaw
     model = load_whisper_model()
 
     result = model.transcribe(
