@@ -76,10 +76,6 @@ A concise professional summary in bullet points.
 
 ACTION ITEMS:
 List every action item.
-For each action item provide:
-- Task
-- Owner
-- Deadline
 
 KEY DECISIONS:
 List all important decisions made during the meeting.

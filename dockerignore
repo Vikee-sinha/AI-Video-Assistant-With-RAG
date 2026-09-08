@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+chroma_db/
+afterword_uploads/
+.git/
+*.md
+!README.md

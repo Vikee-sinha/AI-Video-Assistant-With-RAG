@@ -21,22 +21,17 @@ def run_pipeline(
         f"and language: {language}"
     )
 
-    # ----------------------------------
+    
     # 1. Process input
-    # ----------------------------------
     processed_file_path = process_input(source)
-
-    # ----------------------------------
+    
     # 2. Transcribe
-    # ----------------------------------
     transcript = transcribe_all(
         processed_file_path,
         language
     )
 
-    # ----------------------------------
-    # 3. ONE MISTRAL CALL
-    # ----------------------------------
+    # 3. CALL
     analysis = analyze_meeting(transcript)
 
     meeting_data = parse_analysis(analysis)
@@ -47,21 +42,18 @@ def run_pipeline(
     key_decisions = meeting_data["key_decisions"]
     questions = meeting_data["questions"]
 
-    # ----------------------------------
+    
     # 4. Create vector DB
-    # ----------------------------------
     print("\nCreating vector store...")
 
     get_vector_store(transcript)
 
-    # ----------------------------------
+    
     # 5. Load RAG
-    # ----------------------------------
     rag_chain = load_rag_chain()
 
-    # ----------------------------------
+    
     # 6. Initial RAG question
-    # ----------------------------------
     answer = ask_question(
         rag_chain,
         question
@@ -87,20 +79,13 @@ if __name__ == "__main__":
 
     language = "english"
 
-    question = (
-        "What are the key takeaways from the meeting?"
-    )
-
     results = run_pipeline(
         source_file,
-        language,
-        question
+        language
     )
 
-    # ----------------------------------
+    
     # DISPLAY RESULTS
-    # ----------------------------------
-
     print("\n==============================")
     print("TRANSCRIPT")
     print("==============================")
@@ -136,10 +121,8 @@ if __name__ == "__main__":
     print("==============================")
     print(results["answer"])
 
-    # ----------------------------------
+    
     # INTERACTIVE RAG
-    # ----------------------------------
-
     rag_chain = results["rag_chain"]
 
     print("\nChat with your meeting")
