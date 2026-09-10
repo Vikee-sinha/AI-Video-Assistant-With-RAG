@@ -83,11 +83,11 @@ async def process(
         if file:
             saved_path = source
 
-        # 1. Normalize input (download / convert as needed)
-        processed_file_path = process_input(source)
+        # 1. Normalize input (download / convert / chunk as needed)
+        audio_chunks = process_input(source)
 
-        # 2. Transcribe
-        transcript = transcribe_all(processed_file_path, language)
+        # 2. Transcribe all audio chunks
+        transcript = transcribe_all(audio_chunks, language)
 
         # 3. Single analysis call -> title / summary / action items / etc.
         analysis = analyze_meeting(transcript)
@@ -150,8 +150,10 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 if __name__ == "__main__":
     import uvicorn
+    # Render.com sets the PORT environment variable
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
+    print(f"Server running on port {port}")
 
 
 @app.get("/")

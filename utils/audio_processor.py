@@ -123,48 +123,38 @@ def chunk_audio(
     return chunks
 
 
-def process_input(url: str) -> list[str]:
+def process_input(source: str) -> list[str]:
     """
-    Complete YouTube audio processing pipeline.
+    Complete audio processing pipeline.
+    Accepts either a YouTube URL or a local file path.
 
-    YouTube
+    Input (URL or File)
         ↓
-    Download
+    Download / Load
         ↓
     Convert to 16kHz mono WAV
         ↓
     Split into 120-second chunks
     """
 
-    print("\nDownloading audio...")
+    # Check if input is a YouTube URL or local file
+    if source.startswith(("http://", "https://")):
+        print("\nDownloading audio from YouTube...")
+        audio_file = download_youtube_audio(source)
+        print(f"Downloaded: {audio_file}")
+    else:
+        print(f"\nProcessing local audio file: {source}")
+        audio_file = source
 
-    downloaded_file = download_youtube_audio(
-        url
-    )
-
-    print(
-        f"Downloaded: {downloaded_file}"
-    )
-
-    print("\nConverting audio...")
-
-    converted_file = convert_to_wav(
-        downloaded_file
-    )
-
-    print(
-        f"Converted: {converted_file}"
-    )
+    print("\nConverting audio to standard WAV format (16kHz mono)...")
+    converted_file = convert_to_wav(audio_file)
+    print(f"Converted: {converted_file}")
 
     print("\nCreating audio chunks...")
-
     chunks = chunk_audio(
         converted_file,
         chunk_seconds=120
     )
-
-    print(
-        f"Created {len(chunks)} chunks."
-    )
+    print(f"Created {len(chunks)} chunks.")
 
     return chunks

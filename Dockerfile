@@ -25,4 +25,4 @@ ENV FORCE_CPU="1"
 # Hugging Face Spaces (Docker SDK) always talks to the container on 7860.
 EXPOSE 7860
 
-CMD ["python", "server.py"]
+CMD ["sh", "-c", "uvicorn server:app --host 0.0.0.0 --port ${PORT:-8000}"]

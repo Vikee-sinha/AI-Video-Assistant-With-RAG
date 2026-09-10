@@ -98,17 +98,15 @@ def transcribe_chunk_sarvam(
         "language_code": "hi-IN"
     }
 
-    with open(chunk_path, "rb") as audio_file:
-
-        files = {
-            "file": (
-                os.path.basename(chunk_path),
-                audio_file,
-                "audio/wav"
-            )
-        }
-
-        for attempt in range(3):
+    for attempt in range(3):
+        with open(chunk_path, "rb") as audio_file:
+            files = {
+                "file": (
+                    os.path.basename(chunk_path),
+                    audio_file,
+                    "audio/wav"
+                )
+            }
 
             response = requests.post(
                 SARVAM_STT_URL,
@@ -118,17 +116,15 @@ def transcribe_chunk_sarvam(
                 timeout=300
             )
 
-            if response.status_code != 429:
-                break
+        if response.status_code != 429:
+            break
 
-            wait_time = 2 ** attempt
-
-            print(
-                f"Rate limited. "
-                f"Retrying in {wait_time}s..."
-            )
-
-            time.sleep(wait_time)
+        wait_time = 2 ** attempt
+        print(
+            f"Rate limited. "
+            f"Retrying in {wait_time}s..."
+        )
+        time.sleep(wait_time)
 
         
 

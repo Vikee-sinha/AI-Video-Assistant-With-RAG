@@ -1,11 +1,15 @@
-# Actionable Items, Decisions, Questions
+"""
+Alternative Modular Extractors
+
+These functions provide granular extraction if you prefer separate LLM calls
+instead of the all-in-one analysis in summerizer.py.
+"""
 
 import os
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
 from langchain_google_genai import ChatGoogleGenerativeAI
-# from langchain_mistralai import ChatMistralAI
 
 
 def get_llm():

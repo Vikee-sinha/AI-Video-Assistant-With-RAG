@@ -34,6 +34,17 @@ def get_vector_store(transcript: str) -> Chroma:
         for chunk in chunks
     ]
 
+    # Clear existing data to prevent mixing meetings
+    try:
+        vector_store = Chroma(
+            collection_name=COLLECTION_NAME,
+            persist_directory=CHROMA_DIR,
+            embedding_function=get_embedding_model()
+        )
+        vector_store.delete_collection()
+    except:
+        pass # Collection might not exist yet
+
     return Chroma.from_documents(
         documents=documents,
         embedding=get_embedding_model(),

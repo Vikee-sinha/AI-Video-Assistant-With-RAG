@@ -22,12 +22,12 @@ def run_pipeline(
     )
 
     
-    # 1. Process input
-    processed_file_path = process_input(source)
-    
-    # 2. Transcribe
+    # 1. Process input (downloads if needed, converts, and splits into chunks)
+    audio_chunks = process_input(source)
+
+    # 2. Transcribe all audio chunks
     transcript = transcribe_all(
-        processed_file_path,
+        audio_chunks,
         language
     )
 

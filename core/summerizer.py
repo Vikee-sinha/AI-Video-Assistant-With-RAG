@@ -105,7 +105,7 @@ def analyze_meeting(transcript: str) -> str:
 
     chain = build_analysis_chain()
 
-    print("\nAnalyzing meeting with Mistral...")
+    print("\nAnalyzing meeting with Gemini...")
 
     return invoke_with_backoff(chain, {"transcript": transcript})
 
